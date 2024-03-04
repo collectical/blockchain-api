@@ -11,7 +11,7 @@ const bodyParser = require("body-parser");
 const flash = require("connect-flash");
 const multer = require("multer");
 const fileupload = require('express-fileupload')
-const { toWebp, toMetadata, uploadToIPFS } = require('./metadata')
+// const { toWebp, toMetadata, uploadToIPFS } = require('./metadata')
 
 const app = express()
 
@@ -76,27 +76,25 @@ app.post('/process', async (req, res) => {
 
     let params
 
-    await toWebp(image.data).then(async (data) => {
-      // Convert Buffer to Data URL
-      const dataUrl = `data:image/webp;base64,${data.toString('base64')}`;
-    
-      // Upload Data URL to Cloudinary
-      const result = await cloudinary.uploader.upload(dataUrl, {
-        resource_type: "auto"
-      });
-    
-      params = {
-        name,
-        description,
-        price,
-        image: result.secure_url, // Store the Cloudinary URL in your model
-      }
-    
-      // Save the details in your model
-      const photo = new Photo1(params);
-      await photo.save();
-      console.log(photo);
-    })
+   // Convert Buffer to Data URL
+const dataUrl = `data:image/webp;base64,${image.data.toString('base64')}`;
+
+// Upload Data URL to Cloudinary
+const result = await cloudinary.uploader.upload(dataUrl, {
+  resource_type: "auto"
+});
+
+params = {
+  name,
+  description,
+  price,
+  image: result.secure_url, // Store the Cloudinary URL in your model
+}
+
+// Save the details in your model
+const photo = new Photo1(params);
+await photo.save();
+console.log(photo);
 
     // await fs.writeFile('token.json', JSON.stringify(toMetadata(params)))
     // const data = await fs.readFile('token.json')
