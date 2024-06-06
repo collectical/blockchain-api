@@ -6,11 +6,13 @@ const fs = require('fs').promises
 const express = require('express')
 // const fs = require("fs");
 const path = require("path");
+const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const flash = require("connect-flash");
 const multer = require("multer");
 const fileupload = require('express-fileupload')
+const nodemailer = require("nodemailer");
 // const { toWebp, toMetadata, uploadToIPFS } = require('./metadata')
 
 const app = express()
@@ -49,6 +51,45 @@ app.use(express.json())
 app.use(express.static('public'))
 app.use(express.urlencoded({ extended: true }))
 
+
+app.post('/updateNFT', async (req, res) => {
+  try {
+    const { _id, active } = req.body;
+
+    if (!_id || typeof active !== 'boolean') {
+      return res.status(400).send('id and active must not be empty and active must be a boolean');
+    }
+
+    const photo = await Photo1.findByIdAndUpdate(_id, { active }, { new: true });
+
+    if (!photo) {
+      return res.status(404).send('No photo found with the given id');
+    }
+
+    return res.status(200).json(photo);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+app.post('/signin', async (req, res) => {
+  console.log('ho')
+  try {
+    const { email, password } = req.body;
+    if(email == 'collecticashop@gmail.com' && password == 'Maxx@2003'){
+      const token = jwt.sign({ email : email }, 'secretkey');
+      return res
+        .cookie("access_token", token, { httpOnly: true })
+        .status(200)
+        .json({ token });
+    } else {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "An error occurred" });
+  }
+});
 app.get('/nfts', async (req, res) => {
   try {
     const photos = await Photo1.find({});
@@ -95,6 +136,34 @@ params = {
 const photo = new Photo1(params);
 await photo.save();
 console.log(photo);
+let transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: 'imta819@gmail.com',
+    pass: 'oousizagjysgpbmb', //? replace with  App Password
+  },
+});
+
+// ?Email options
+let approvalText = "Your NFT has been uploaded and is pending approval. You can approve the NFT at the following URL: collectica.shop";
+
+let mailOptions = {
+  from: 'imta819@gmail.com',
+  to: 'collecticashop@gmail.com',
+  subject: "Regarding Approval of an uploaded NFT.",
+  text: approvalText,
+  html: `<b>${approvalText}</b>`,
+};
+
+//? Send email
+transporter.sendMail(mailOptions, (error, info) => {
+  if (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Failed to send email" });
+  }
+  console.log("Message sent: %s", info.messageId);
+  res.json({ message: "Corporate member approved and email sent" });
+});
 
     // await fs.writeFile('token.json', JSON.stringify(toMetadata(params)))
     // const data = await fs.readFile('token.json')

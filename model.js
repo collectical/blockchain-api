@@ -7,6 +7,8 @@ const photoSchema = new mongoose.Schema({
   price: String,
   description: String,
   image: String,
+  active: { type: Boolean,  default: false },
+  createdAt: { type: Date, default: Date.now },
 });
 
 // Create a Photo model using the schema
